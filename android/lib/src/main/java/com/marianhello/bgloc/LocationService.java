@@ -517,38 +517,37 @@ public class LocationService extends Service {
         @Override
         protected Boolean doInBackground(BackgroundLocation... locations) {
             logger.debug("Executing PostLocationTask#doInBackground");
-            JSONArray jsonLocations = new JSONArray();
+            // JSONArray jsonLocations = new JSONArray();
             for (BackgroundLocation location : locations) {
                 Config config = getConfig();
                 try {
-                    jsonLocations.put(config.getTemplate().locationToJson(location));
+                    // jsonLocations.put(config.getTemplate().locationToJson(location));
+                    Object jsonLocation = config.getTemplate().locationToJson(location);
+                    String url = mConfig.getUrl();
+                    logger.debug("Posting json to url: {} headers: {} json: {}", url, mConfig.getHttpHeaders(), jsonLocation);
+
+                    int responseCode;
+
+                    try {
+                        responseCode = HttpPostService.postJSON(url, jsonLocation, mConfig.getHttpHeaders());
+                    } catch (Exception e) {
+                        hasConnectivity = isNetworkAvailable();
+                        logger.warn("Error while posting locations: {}", e.getMessage());
+                        return false;
+                    }
+
+                    if (responseCode != HttpURLConnection.HTTP_OK) {
+                        logger.warn("Server error while posting locations responseCode: {}", responseCode);
+                        return false;
+                    }
+
+                    Long locationId = location.getLocationId();
+                    if (locationId != null) {
+                        dao.deleteLocation(locationId);
+                    }
                 } catch (JSONException e) {
                     logger.warn("Location to json failed: {}", location.toString());
                     return false;
-                }
-            }
-
-            String url = mConfig.getUrl();
-            logger.debug("Posting json to url: {} headers: {}", url, mConfig.getHttpHeaders());
-            int responseCode;
-
-            try {
-                responseCode = HttpPostService.postJSON(url, jsonLocations, mConfig.getHttpHeaders());
-            } catch (Exception e) {
-                hasConnectivity = isNetworkAvailable();
-                logger.warn("Error while posting locations: {}", e.getMessage());
-                return false;
-            }
-
-            if (responseCode != HttpURLConnection.HTTP_OK) {
-                logger.warn("Server error while posting locations responseCode: {}", responseCode);
-                return false;
-            }
-
-            for (BackgroundLocation location : locations) {
-                Long locationId = location.getLocationId();
-                if (locationId != null) {
-                    dao.deleteLocation(locationId);
                 }
             }
 
