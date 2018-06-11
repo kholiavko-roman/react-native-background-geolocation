@@ -17,6 +17,7 @@ public class BackgroundLocation implements Parcelable {
     private Integer locationProvider = null;
     private Long batchStartMillis = null;
     private String provider;
+    private String cityLine;
     private double latitude = 0.0;
     private double longitude = 0.0;
     private long time = 0;
@@ -148,6 +149,7 @@ public class BackgroundLocation implements Parcelable {
         dest.writeInt(locationProvider);
         dest.writeLong(batchStartMillis);
         dest.writeString(provider);
+        dest.writeString(cityLine);
         dest.writeDouble(latitude);
         dest.writeDouble(longitude);
         dest.writeLong(time);
@@ -176,7 +178,7 @@ public class BackgroundLocation implements Parcelable {
             return new BackgroundLocation[size];
         }
     };
-    
+
     public BackgroundLocation makeClone() {
         return new BackgroundLocation(this);
     }
@@ -240,10 +242,18 @@ public class BackgroundLocation implements Parcelable {
     }
 
     /**
-     * Sets the name of the provider that generated this fix.
+     * Returns cityLine
+     * @return cityLine
      */
-    public void setProvider(String provider) {
-        this.provider = provider;
+    public String getCityLine() {
+        return cityLine;
+    }
+
+    /**
+     * Sets city line
+     */
+    public void setCityLine(String cityLine) {
+        this.cityLine = cityLine;
     }
 
     /**
@@ -687,6 +697,7 @@ public class BackgroundLocation implements Parcelable {
             s.append(" et=");
             TimeUtils.formatDuration(elapsedRealtimeNanos / 1000000L, s);
         }
+        s.append(" cityLine=").append(cityLine);
         if (hasAltitude) s.append(" alt=").append(altitude);
         if (hasSpeed) s.append(" vel=").append(speed);
         if (hasBearing) s.append(" bear=").append(bearing);
@@ -712,6 +723,7 @@ public class BackgroundLocation implements Parcelable {
         json.put("time", time);
         json.put("latitude", latitude);
         json.put("longitude", longitude);
+        json.put("cityLine", cityLine);
         if (hasAccuracy) json.put("accuracy", accuracy);
         if (hasSpeed) json.put("speed", speed);
         if (hasAltitude) json.put("altitude", altitude);
@@ -757,6 +769,8 @@ public class BackgroundLocation implements Parcelable {
             return bearing;
         } else if ("@radius".equals(key)) {
             return radius;
+        } else if ("@cityLine".equals(key)) {
+            return cityLine;
         }
 
         return null;

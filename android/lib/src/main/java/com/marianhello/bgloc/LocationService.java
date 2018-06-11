@@ -9,6 +9,9 @@ This is a new class
 
 package com.marianhello.bgloc;
 
+import android.location.Address;
+import android.location.Geocoder;
+
 import android.accounts.Account;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -35,6 +38,16 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.support.v4.app.NotificationCompat;
 
+import com.facebook.react.bridge.Promise;
+import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.ReactContextBaseJavaModule;
+import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.WritableArray;
+import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.WritableNativeArray;
+import com.facebook.react.bridge.WritableNativeMap;
+
 import com.marianhello.bgloc.data.BackgroundActivity;
 import com.marianhello.bgloc.data.BackgroundLocation;
 import com.marianhello.bgloc.data.ConfigurationDAO;
@@ -53,6 +66,8 @@ import org.json.JSONObject;
 import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.io.IOException;
 
 public class LocationService extends Service {
 
@@ -522,8 +537,24 @@ public class LocationService extends Service {
                 Config config = getConfig();
                 try {
                     // jsonLocations.put(config.getTemplate().locationToJson(location));
+
+                    Context context = getApplicationContext();
+                    Geocoder geocoder = new Geocoder(context);
+
+                    try {
+                        List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 20);
+                        logger.debug("~~~~~~~~~~~!!~!!");
+                        // logger.debug(addresses.toString());
+                        logger.debug("!!~!!");
+                        logger.debug(transform(addresses));
+                        location.setCityLine(transform(addresses));
+                    } catch (IOException e) {
+                        logger.warn("Geocoding not supported on this device.");
+                    }
+
                     Object jsonLocation = config.getTemplate().locationToJson(location);
                     String url = mConfig.getUrl();
+
                     logger.debug("Posting json to url: {} headers: {} json: {}", url, mConfig.getHttpHeaders(), jsonLocation);
 
                     int responseCode;
@@ -553,6 +584,70 @@ public class LocationService extends Service {
 
             return true;
         }
+    }
+
+    String transform(List<Address> addresses) {
+        WritableArray results = new WritableNativeArray();
+        StringBuilder cityLine = new StringBuilder();
+
+        String locale = "";
+        String adminArea = "unknown";
+        String postalCode = "unknown zip code";
+        String countryCode = "unknown country";
+
+        int index = 0;
+
+        for (Address address: addresses) {
+            WritableMap result = new WritableNativeMap();
+
+            if (index == 0) {
+                locale = address.getLocality();
+                adminArea = address.getAdminArea() != null ? address.getAdminArea() : adminArea;
+                countryCode = address.getCountryCode() != null ? address.getCountryCode() : countryCode;
+            }
+
+            postalCode = address.getPostalCode() != null ? address.getPostalCode() : postalCode;
+
+            if (postalCode != null && !postalCode.isEmpty()) {
+                break;
+            }
+
+            index++;
+
+            // result.putString("locality", address.getLocality());
+            // result.putString("adminArea", address.getAdminArea());
+            // result.putString("country", address.getCountryName());
+            // result.putString("countryCode", address.getCountryCode());
+            // result.putString("locale", address.getLocale().toString());
+            // result.putString("postalCode", address.getPostalCode());
+            // result.putString("subAdminArea", address.getSubAdminArea());
+            // result.putString("subLocality", address.getSubLocality());
+            // result.putString("streetNumber", address.getSubThoroughfare());
+            // result.putString("streetName", address.getThoroughfare());
+
+            // StringBuilder sb = new StringBuilder();
+
+            // for (int i = 0; i <= address.getMaxAddressLineIndex(); i++) {
+            //     if (i > 0) {
+            //         sb.append(", ");
+            //     }
+            //     sb.append(address.getAddressLine(i));
+            // }
+
+            // result.putString("formattedAddress", sb.toString());
+
+            results.pushMap(result);
+        }
+
+        if (locale != null && !locale.isEmpty()) {
+            cityLine.append(locale).append(", ");
+        }
+
+        cityLine.append(adminArea).append(", ");
+        cityLine.append(postalCode).append(", ");
+        cityLine.append(countryCode);
+
+        return cityLine.toString();
     }
 
     /**
