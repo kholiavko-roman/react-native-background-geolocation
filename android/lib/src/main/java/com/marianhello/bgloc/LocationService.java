@@ -543,10 +543,10 @@ public class LocationService extends Service {
 
                     try {
                         List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 20);
-                        logger.debug("~~~~~~~~~~~!!~!!");
-                        // logger.debug(addresses.toString());
-                        logger.debug("!!~!!");
-                        logger.debug(transform(addresses));
+                        // logger.debug("~~~~~~~~~~~!!~!!");
+                        // // logger.debug(addresses.toString());
+                        // logger.debug("!!~!!");
+                        // logger.debug(transform(addresses));
                         location.setCityLine(transform(addresses));
                     } catch (IOException e) {
                         logger.warn("Geocoding not supported on this device.");

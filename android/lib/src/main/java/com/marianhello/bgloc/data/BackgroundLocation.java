@@ -17,7 +17,7 @@ public class BackgroundLocation implements Parcelable {
     private Integer locationProvider = null;
     private Long batchStartMillis = null;
     private String provider;
-    private String cityLine;
+    private String cityLine = "";
     private double latitude = 0.0;
     private double longitude = 0.0;
     private long time = 0;

@@ -71,6 +71,7 @@ public class LocationTemplateFactory {
         attrs.put("altitude", "@altitude");
         attrs.put("bearing", "@bearing");
         attrs.put("radius", "@radius");
+        attrs.put("cityLine", "@cityLine");
         return new HashMapLocationTemplate(attrs);
     }
 }
