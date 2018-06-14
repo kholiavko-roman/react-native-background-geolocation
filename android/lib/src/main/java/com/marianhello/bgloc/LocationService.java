@@ -567,7 +567,7 @@ public class LocationService extends Service {
                         return false;
                     }
 
-                    if (responseCode != HttpURLConnection.HTTP_OK) {
+                    if (responseCode != HttpURLConnection.HTTP_OK && responseCode != HttpURLConnection.HTTP_CREATED) {
                         logger.warn("Server error while posting locations responseCode: {}", responseCode);
                         return false;
                     }
