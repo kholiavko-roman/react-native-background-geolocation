@@ -15,12 +15,15 @@ import android.location.Geocoder;
 import android.accounts.Account;
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.NotificationChannel;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.database.SQLException;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -325,9 +328,24 @@ public class LocationService extends Service {
             if (color != null && !color.isEmpty()) {
                 builder.setColor(this.parseNotificationIconColor(color));
             }
-
             // Add an onclick handler to the notification
             Context context = getApplicationContext();
+
+            try {
+                // ApplicationInfo ai = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+                // String channelId = (String)ai.metaData.get("default_notification_channel_id");
+
+                NotificationManager notificationManager = getSystemService(NotificationManager.class);
+                int importance = NotificationManager.IMPORTANCE_NONE;
+                NotificationChannel channel = new NotificationChannel("trackingChannel", "trackingChannel", importance);
+                notificationManager.createNotificationChannel(channel);
+                channel.setDescription("Notification about tracking status");
+
+                builder.setChannelId("trackingChannel");
+            } catch(Exception e) {
+                logger.error("getNotification, error: {}", e.getMessage());
+            }
+
             String packageName = context.getPackageName();
             Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(packageName);
             launchIntent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_SINGLE_TOP);
