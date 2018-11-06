@@ -335,13 +335,15 @@ public class LocationService extends Service {
                 // ApplicationInfo ai = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
                 // String channelId = (String)ai.metaData.get("default_notification_channel_id");
 
-                NotificationManager notificationManager = getSystemService(NotificationManager.class);
-                int importance = NotificationManager.IMPORTANCE_NONE;
-                NotificationChannel channel = new NotificationChannel("trackingChannel", "trackingChannel", importance);
-                notificationManager.createNotificationChannel(channel);
-                channel.setDescription("Notification about tracking status");
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    NotificationManager notificationManager = getSystemService(NotificationManager.class);
+                    int importance = NotificationManager.IMPORTANCE_NONE;
+                    NotificationChannel channel = new NotificationChannel("trackingChannel", "trackingChannel", importance);
+                    notificationManager.createNotificationChannel(channel);
+                    channel.setDescription("Notification about tracking status");
 
-                builder.setChannelId("trackingChannel");
+                    builder.setChannelId("trackingChannel");
+                }
             } catch(Exception e) {
                 logger.error("getNotification, error: {}", e.getMessage());
             }
