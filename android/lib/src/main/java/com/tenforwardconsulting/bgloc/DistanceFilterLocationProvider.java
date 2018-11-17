@@ -291,63 +291,68 @@ public class DistanceFilterLocationProvider extends AbstractLocationProvider imp
     }
 
     public void onLocationChanged(Location location) {
-        logger.debug("Location change: {} isMoving={}", location.toString(), isMoving);
+        try {
+            logger.debug("Location change: {} isMoving={}", location.toString(), isMoving);
 
-        if (!isMoving && !isAcquiringStationaryLocation && stationaryLocation==null) {
-            // Perhaps our GPS signal was interupted, re-acquire a stationaryLocation now.
-            setPace(false);
-        }
-
-        showDebugToast( "mv:" + isMoving + ",acy:" + location.getAccuracy() + ",v:" + location.getSpeed() + ",df:" + scaledDistanceFilter);
-
-        if (isAcquiringStationaryLocation) {
-            if (stationaryLocation == null || stationaryLocation.getAccuracy() > location.getAccuracy()) {
-                stationaryLocation = location;
+            if (!isMoving && !isAcquiringStationaryLocation && stationaryLocation==null) {
+                // Perhaps our GPS signal was interupted, re-acquire a stationaryLocation now.
+                setPace(false);
             }
-            if (++locationAcquisitionAttempts == MAX_STATIONARY_ACQUISITION_ATTEMPTS) {
-                isAcquiringStationaryLocation = false;
-                startMonitoringStationaryRegion(stationaryLocation);
-                handleStationary(stationaryLocation, stationaryRadius);
-                return;
-            } else {
-                // Unacceptable stationary-location: bail-out and wait for another.
+
+            showDebugToast( "mv:" + isMoving + ",acy:" + location.getAccuracy() + ",v:" + location.getSpeed() + ",df:" + scaledDistanceFilter);
+
+            if (isAcquiringStationaryLocation) {
+                if (stationaryLocation == null || stationaryLocation.getAccuracy() > location.getAccuracy()) {
+                    stationaryLocation = location;
+                }
+                if (++locationAcquisitionAttempts == MAX_STATIONARY_ACQUISITION_ATTEMPTS) {
+                    isAcquiringStationaryLocation = false;
+                    startMonitoringStationaryRegion(stationaryLocation);
+                    handleStationary(stationaryLocation, stationaryRadius);
+                    return;
+                } else {
+                    // Unacceptable stationary-location: bail-out and wait for another.
+                    playDebugTone(Tone.BEEP);
+                    return;
+                }
+            } else if (isAcquiringSpeed) {
+                if (++locationAcquisitionAttempts == MAX_SPEED_ACQUISITION_ATTEMPTS) {
+                    // Got enough samples, assume we're confident in reported speed now.  Play "woohoo" sound.
+                    playDebugTone(Tone.DOODLY_DOO);
+                    isAcquiringSpeed = false;
+                    scaledDistanceFilter = calculateDistanceFilter(location.getSpeed());
+                    setPace(true);
+                } else {
+                    playDebugTone(Tone.BEEP);
+                    return;
+                }
+            } else if (isMoving) {
                 playDebugTone(Tone.BEEP);
-                return;
-            }
-        } else if (isAcquiringSpeed) {
-            if (++locationAcquisitionAttempts == MAX_SPEED_ACQUISITION_ATTEMPTS) {
-                // Got enough samples, assume we're confident in reported speed now.  Play "woohoo" sound.
-                playDebugTone(Tone.DOODLY_DOO);
-                isAcquiringSpeed = false;
-                scaledDistanceFilter = calculateDistanceFilter(location.getSpeed());
-                setPace(true);
-            } else {
-                playDebugTone(Tone.BEEP);
-                return;
-            }
-        } else if (isMoving) {
-            playDebugTone(Tone.BEEP);
 
-            // Only reset stationaryAlarm when accurate speed is detected, prevents spurious locations from resetting when stopped.
-            if ( (location.getSpeed() >= 1) && (location.getAccuracy() <= mConfig.getStationaryRadius()) ) {
-                resetStationaryAlarm();
-            }
-            // Calculate latest distanceFilter, if it changed by 5 m/s, we'll reconfigure our pace.
-            Integer newDistanceFilter = calculateDistanceFilter(location.getSpeed());
-            if (newDistanceFilter != scaledDistanceFilter.intValue()) {
-                logger.info("Updating distanceFilter: new={} old={}", newDistanceFilter, scaledDistanceFilter);
-                scaledDistanceFilter = newDistanceFilter;
-                setPace(true);
-            }
-            if (location.distanceTo(lastLocation) < mConfig.getDistanceFilter()) {
+                // Only reset stationaryAlarm when accurate speed is detected, prevents spurious locations from resetting when stopped.
+                if ( (location.getSpeed() >= 1) && (location.getAccuracy() <= mConfig.getStationaryRadius()) ) {
+                    resetStationaryAlarm();
+                }
+                // Calculate latest distanceFilter, if it changed by 5 m/s, we'll reconfigure our pace.
+                Integer newDistanceFilter = calculateDistanceFilter(location.getSpeed());
+                if (newDistanceFilter != scaledDistanceFilter.intValue()) {
+                    logger.info("Updating distanceFilter: new={} old={}", newDistanceFilter, scaledDistanceFilter);
+                    scaledDistanceFilter = newDistanceFilter;
+                    setPace(true);
+                }
+
+                if (lastLocation != null && location.distanceTo(lastLocation) < mConfig.getDistanceFilter()) {
+                    return;
+                }
+            } else if (stationaryLocation != null) {
                 return;
             }
-        } else if (stationaryLocation != null) {
-            return;
+            // Go ahead and cache, push to server
+            lastLocation = location;
+            handleLocation(location);
+        } catch (NullPointerException e) {
+            logger.error("NullPointerException: {}", e.getMessage());
         }
-        // Go ahead and cache, push to server
-        lastLocation = location;
-        handleLocation(location);
     }
 
     public void resetStationaryAlarm() {
