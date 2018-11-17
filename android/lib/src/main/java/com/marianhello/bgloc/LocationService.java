@@ -214,7 +214,11 @@ public class LocationService extends Service {
     @Override
     public void onDestroy() {
         logger.info("Destroying LocationService");
-        mProvider.onDestroy();
+
+        if (mProvider != null) {
+            mProvider.onDestroy();
+        }
+
         mProvider = null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             handlerThread.quitSafely();
@@ -362,7 +366,9 @@ public class LocationService extends Service {
     }
 
     private void switchMode(int mode) {
-        mProvider.onSwitchMode(mode);
+        if (mProvider != null) {
+            mProvider.onSwitchMode(mode);
+        }
     }
 
     private void configure(Config config) {
@@ -395,7 +401,11 @@ public class LocationService extends Service {
 
         if (currentConfig.getLocationProvider() != mConfig.getLocationProvider()) {
             boolean shouldStart = mProvider.isStarted();
-            mProvider.onDestroy();
+
+            if (mProvider != null) {
+                mProvider.onDestroy();
+            }
+
             LocationProviderFactory spf = new LocationProviderFactory(this, mConfig);
             mProvider = spf.getInstance(mConfig.getLocationProvider());
             mProvider.onCreate();
