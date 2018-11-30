@@ -428,7 +428,9 @@ public class BackgroundGeolocationFacade {
     }
 
     private void runOnUiThread(Runnable runnable) {
-        getActivity().runOnUiThread(runnable);
+        if (runnable != null) {
+            getActivity().runOnUiThread(runnable);
+        }
     }
 
     private void serviceSend(Message message) {
