@@ -431,7 +431,7 @@ public class DistanceFilterLocationProvider extends AbstractLocationProvider imp
 
     public void onPollStationaryLocation(Location location) {
         float stationaryRadius = mConfig.getStationaryRadius();
-        if (isMoving) {
+        if (isMoving || stationaryLocation == null) {
             return;
         }
         playDebugTone(Tone.BEEP);
