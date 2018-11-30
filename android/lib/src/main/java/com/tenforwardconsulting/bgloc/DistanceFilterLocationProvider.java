@@ -401,6 +401,10 @@ public class DistanceFilterLocationProvider extends AbstractLocationProvider imp
      * User has exit his stationary region!  Initiate aggressive geolocation!
      */
     public void onExitStationaryRegion(Location location) {
+        if (location == null) {
+            return;
+        }
+
         // Filter-out spurious region-exits:  must have at least a little speed to move out of stationary-region
         playDebugTone(Tone.BEEP_BEEP_BEEP);
 
