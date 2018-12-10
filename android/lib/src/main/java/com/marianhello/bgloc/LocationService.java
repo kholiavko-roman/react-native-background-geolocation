@@ -70,6 +70,7 @@ import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.io.IOException;
 
 public class LocationService extends Service {
@@ -569,7 +570,8 @@ public class LocationService extends Service {
                     // jsonLocations.put(config.getTemplate().locationToJson(location));
 
                     Context context = getApplicationContext();
-                    Geocoder geocoder = new Geocoder(context);
+                    Locale geocoderLocale = new Locale("en", "US");
+                    Geocoder geocoder = new Geocoder(context, geocoderLocale);
 
                     try {
                         List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 20);
