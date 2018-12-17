@@ -429,7 +429,15 @@ public class BackgroundGeolocationFacade {
 
     private void runOnUiThread(Runnable runnable) {
         if (runnable != null) {
-            getActivity().runOnUiThread(runnable);
+             try {
+                Activity activity = getActivity();
+
+                if (activity != null) {
+                    activity.runOnUiThread(runnable);
+                }
+            } catch (NullPointerException e) {
+                logger.error("runOnUiThread exception: {}", e.getMessage());
+            }
         }
     }
 

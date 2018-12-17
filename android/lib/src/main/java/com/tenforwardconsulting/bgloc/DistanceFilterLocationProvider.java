@@ -142,7 +142,13 @@ public class DistanceFilterLocationProvider extends AbstractLocationProvider imp
 
         try {
             locationManager.removeUpdates(this);
-            locationManager.removeProximityAlert(stationaryRegionPI);
+
+            try {
+                locationManager.removeProximityAlert(stationaryRegionPI);
+            } catch (IllegalArgumentException e) {
+                logger.error("Error in onStop on removeProximityAlert: {}", e.getMessage());
+            }
+
         } catch (SecurityException e) {
             //noop
         } finally {
@@ -414,8 +420,14 @@ public class DistanceFilterLocationProvider extends AbstractLocationProvider imp
         try {
             // Cancel the periodic stationary location monitor alarm.
             alarmManager.cancel(stationaryLocationPollingPI);
-            // Kill the current region-monitor we just walked out of.
-            locationManager.removeProximityAlert(stationaryRegionPI);
+
+            try {
+                // Kill the current region-monitor we just walked out of.
+                locationManager.removeProximityAlert(stationaryRegionPI);
+            } catch (IllegalArgumentException e) {
+                logger.error("Error in onExitStationaryRegion on removeProximityAlert: {}", e.getMessage());
+            }
+
             // Engage aggressive tracking.
             this.setPace(true);
         } catch (SecurityException e) {
