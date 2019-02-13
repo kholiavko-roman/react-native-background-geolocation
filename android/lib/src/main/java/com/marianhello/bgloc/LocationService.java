@@ -342,7 +342,7 @@ public class LocationService extends Service {
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     NotificationManager notificationManager = getSystemService(NotificationManager.class);
-                    int importance = NotificationManager.IMPORTANCE_NONE;
+                    int importance = NotificationManager.IMPORTANCE_LOW;
                     NotificationChannel channel = new NotificationChannel("trackingChannel", "trackingChannel", importance);
                     notificationManager.createNotificationChannel(channel);
                     channel.setDescription("Notification about tracking status");
