@@ -633,7 +633,11 @@ public class LocationService extends Service {
             WritableMap result = new WritableNativeMap();
 
             if (index == 0) {
-                locale = address.getLocality();
+                String locality = address.getLocality();
+                String subLocality = address.getSubLocality();
+
+                locale = locality != null ? locality : subLocality != null ? subLocality : '';
+
                 adminArea = address.getAdminArea() != null ? address.getAdminArea() : adminArea;
                 countryCode = address.getCountryCode() != null ? address.getCountryCode() : countryCode;
             }
