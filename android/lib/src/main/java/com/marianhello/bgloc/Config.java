@@ -62,6 +62,7 @@ public class Config implements Parcelable, Cloneable
     private HashMap httpHeaders;
     private Integer maxLocations;
     private LocationTemplate template;
+    private String googleApiKey;
 
     public Config () {
     }
@@ -88,6 +89,7 @@ public class Config implements Parcelable, Cloneable
         setSyncUrl(in.readString());
         setSyncThreshold(in.readInt());
         setMaxLocations(in.readInt());
+        setGoogleApiKey(in.readString());
         Bundle bundle = in.readBundle();
         setHttpHeaders((HashMap<String, String>) bundle.getSerializable("httpHeaders"));
         setTemplate((LocationTemplate) bundle.getSerializable(AbstractLocationTemplate.BUNDLE_KEY));
@@ -118,6 +120,7 @@ public class Config implements Parcelable, Cloneable
         config.httpHeaders = null;
         config.maxLocations = 10000;
         config.template = null;
+        config.googleApiKey = null;
 
         return config;
     }
@@ -149,6 +152,7 @@ public class Config implements Parcelable, Cloneable
         out.writeString(getSyncUrl());
         out.writeInt(getSyncThreshold());
         out.writeInt(getMaxLocations());
+        out.writeString(getGoogleApiKey());
         Bundle bundle = new Bundle();
         bundle.putSerializable("httpHeaders", getHttpHeaders());
         bundle.putSerializable(AbstractLocationTemplate.BUNDLE_KEY, (AbstractLocationTemplate) getTemplate());
@@ -507,6 +511,18 @@ public class Config implements Parcelable, Cloneable
         this.template = template;
     }
 
+    public boolean hasGoogleApiKey() {
+        return googleApiKey != null;
+    }
+
+    public String getGoogleApiKey() {
+        return googleApiKey;
+    }
+
+    public void setGoogleApiKey(String googleApiKey) {
+        this.googleApiKey = googleApiKey;
+    }
+
     @Override
     public String toString () {
         return new StringBuffer()
@@ -621,6 +637,9 @@ public class Config implements Parcelable, Cloneable
         }
         if (config2.hasTemplate()) {
             merger.setTemplate(config2.getTemplate());
+        }
+        if (config2.hasGoogleApiKey()) {
+            merger.setGoogleApiKey(config2.getGoogleApiKey());
         }
 
         return merger;

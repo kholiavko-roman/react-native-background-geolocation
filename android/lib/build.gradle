@@ -9,7 +9,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 27
         versionCode 8
-        versionName "0.5.0-alpha.3.13"
+        versionName "0.5.0-alpha.3.14"
     }
 }
 
@@ -24,5 +24,6 @@ dependencies {
     compile 'com.google.android.gms:play-services-location:+'
     compile 'com.github.tony19:logback-android-core:1.1.1-6'
     compile 'com.github.tony19:logback-android-classic:1.1.1-6'
-    compile 'org.slf4j:slf4j-api:1.7.21'
+    compile 'com.google.maps:google-maps-services:0.9.3'
+    // compile 'org.slf4j:slf4j-simple:1.7.21' //Program type already present: org.slf4j.impl.StaticLoggerBinder
 }

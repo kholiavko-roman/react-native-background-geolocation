@@ -51,6 +51,13 @@ import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.WritableNativeArray;
 import com.facebook.react.bridge.WritableNativeMap;
 
+import com.google.maps.GeoApiContext;
+import com.google.maps.GeocodingApi;
+import com.google.maps.errors.ApiException;
+import com.google.maps.model.AddressComponent;
+import com.google.maps.model.AddressComponentType;
+import com.google.maps.model.GeocodingResult;
+import com.google.maps.model.LatLng;
 import com.marianhello.bgloc.data.BackgroundActivity;
 import com.marianhello.bgloc.data.BackgroundLocation;
 import com.marianhello.bgloc.data.ConfigurationDAO;
@@ -67,10 +74,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.HttpURLConnection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import java.io.IOException;
 
 public class LocationService extends Service {
@@ -567,22 +571,27 @@ public class LocationService extends Service {
             for (BackgroundLocation location : locations) {
                 Config config = getConfig();
                 try {
-                    // jsonLocations.put(config.getTemplate().locationToJson(location));
-
                     Context context = getApplicationContext();
-                    Locale geocoderLocale = new Locale("en", "US");
-                    Geocoder geocoder = new Geocoder(context, geocoderLocale);
 
-                    try {
-                        List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 20);
-                        // logger.debug("~~~~~~~~~~~!!~!!");
-                        // // logger.debug(addresses.toString());
-                        // logger.debug("!!~!!");
-                        // logger.debug(transform(addresses));
-                        location.setCityLine(transform(addresses));
-                    } catch (IOException e) {
-                        logger.warn("Geocoding not supported on this device.");
-                    }
+                     try {
+                         Locale geocoderLocale = new Locale("en", "US");
+                         Geocoder geocoder = new Geocoder(context, geocoderLocale);
+                         List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 20);
+                         location.setCityLine(transform(addresses));
+                     } catch (IOException e) {
+                         logger.warn("Geocoding not supported on this device.");
+
+                         try {
+                             if (mConfig.hasGoogleApiKey()) {
+                                 String cityLine = fallbackGeocoder(location.getLatitude(), location.getLongitude());
+                                 location.setCityLine(cityLine);
+                             } else {
+                                 logger.warn("Google api key for geocoding fallback is not defined.");
+                             }
+                         } catch (Exception exeption) {
+                             logger.warn("Geocoding fallback not working.");
+                         }
+                     }
 
                     Object jsonLocation = config.getTemplate().locationToJson(location);
                     String url = mConfig.getUrl();
@@ -618,6 +627,57 @@ public class LocationService extends Service {
         }
     }
 
+    public String fallbackGeocoder(double lat, double lng) throws InterruptedException, ApiException, IOException {
+        GeoApiContext context = new GeoApiContext.Builder()
+                .apiKey(mConfig.getGoogleApiKey())
+                .build();
+
+        LatLng coords = new LatLng(lat,lng);
+
+        GeocodingResult[] results1 =  GeocodingApi.reverseGeocode(context, coords).await();
+
+        String locality = "";
+        String state = "";
+        String postalCode = "";
+        String countryCode = "";
+
+        for (GeocodingResult arrElement : results1) {
+            AddressComponent[] adressComponent = arrElement.addressComponents;
+
+            if (locality.isEmpty() || state.isEmpty() || postalCode.isEmpty() || countryCode.isEmpty()) {
+                for (AddressComponent adressItem : adressComponent) {
+                    List<AddressComponentType> types = Arrays.asList(adressItem.types);
+
+                    if (locality.isEmpty() && types.contains(AddressComponentType.LOCALITY)) {
+                        locality = adressItem.longName;
+                    }
+
+                    if (state.isEmpty() && types.contains(AddressComponentType.ADMINISTRATIVE_AREA_LEVEL_1)) {
+                        state = adressItem.shortName;
+                    }
+
+                    if (postalCode.isEmpty() && types.contains(AddressComponentType.POSTAL_CODE)) {
+                        postalCode = adressItem.longName;
+                    }
+
+                    if (countryCode.isEmpty() && types.contains(AddressComponentType.COUNTRY)) {
+                        countryCode = adressItem.shortName;
+                    }
+                }
+            }
+        }
+
+
+        locality = !locality.isEmpty() ? locality : "unknown city";
+        state = !state.isEmpty() ? state : "unknown state";
+        postalCode = !postalCode.isEmpty() ? postalCode : "unknown zipCode";
+        countryCode = !countryCode.isEmpty() ? countryCode : "unknown country";
+
+        String cityLine = locality + ", " + state + ", " + postalCode + ", " + countryCode;
+
+        return cityLine;
+    }
+
     String transform(List<Address> addresses) {
         WritableArray results = new WritableNativeArray();
         StringBuilder cityLine = new StringBuilder();
@@ -636,7 +696,7 @@ public class LocationService extends Service {
                 String locality = address.getLocality();
                 String subLocality = address.getSubLocality();
 
-                locale = locality != null ? locality : subLocality != null ? subLocality : '';
+                locale = locality != null ? locality : subLocality != null ? subLocality : "";
 
                 adminArea = address.getAdminArea() != null ? address.getAdminArea() : adminArea;
                 countryCode = address.getCountryCode() != null ? address.getCountryCode() : countryCode;

@@ -79,6 +79,8 @@ public class ConfigMapper {
             }
         }
 
+        if (options.hasKey("googleApiKey")) config.setGoogleApiKey(options.getString("googleApiKey"));
+
         return config;
     }
 
@@ -94,6 +96,7 @@ public class ConfigMapper {
         out.putString("notificationIconLarge", config.getLargeNotificationIcon());
         out.putString("notificationIconSmall", config.getSmallNotificationIcon());
         out.putString("notificationIconColor", config.getNotificationIconColor());
+        out.putString("googleApiKey", config.getGoogleApiKey());
         out.putBoolean("stopOnTerminate", config.getStopOnTerminate());
         out.putBoolean("startOnBoot", config.getStartOnBoot());
         out.putBoolean("startForeground", config.getStartForeground());
