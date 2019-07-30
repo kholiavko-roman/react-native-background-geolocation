@@ -239,13 +239,20 @@ public class LocationService extends Service {
     @Override
     public void onTaskRemoved(Intent rootIntent) {
         logger.debug("Task has been removed");
-        if (mConfig.getStopOnTerminate()) {
-            logger.info("Stopping self");
-            stopSelf();
-        } else {
-            logger.info("Continue running in background");
+
+         try {
+            if (mConfig != null) {
+                if (mConfig.getStopOnTerminate()) {
+                    logger.info("Stopping self");
+                    stopSelf();
+                } else {
+                    logger.info("Continue running in background");
+                }
+                super.onTaskRemoved(rootIntent);
+            }
+        } catch (NullPointerException e) {
+            logger.error("onTaskRemoved exception: {}", e.getMessage());
         }
-        super.onTaskRemoved(rootIntent);
     }
 
     @Override
