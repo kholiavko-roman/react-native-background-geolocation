@@ -581,16 +581,16 @@ public class LocationService extends Service {
                      } catch (IOException e) {
                          logger.warn("Geocoding not supported on this device.");
 
-                         try {
-                             if (mConfig.hasGoogleApiKey()) {
-                                 String cityLine = fallbackGeocoder(location.getLatitude(), location.getLongitude());
-                                 location.setCityLine(cityLine);
-                             } else {
-                                 logger.warn("Google api key for geocoding fallback is not defined.");
-                             }
-                         } catch (Exception exeption) {
-                             logger.warn("Geocoding fallback not working.");
-                         }
+                        //  try {
+                        //      if (mConfig.hasGoogleApiKey()) {
+                        //          String cityLine = fallbackGeocoder(location.getLatitude(), location.getLongitude());
+                        //          location.setCityLine(cityLine);
+                        //      } else {
+                        //          logger.warn("Google api key for geocoding fallback is not defined.");
+                        //      }
+                        //  } catch (Exception exeption) {
+                        //      logger.warn("Geocoding fallback not working.");
+                        //  }
                      }
 
                     Object jsonLocation = config.getTemplate().locationToJson(location);
