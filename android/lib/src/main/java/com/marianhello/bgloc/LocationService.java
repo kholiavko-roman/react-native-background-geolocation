@@ -249,6 +249,8 @@ public class LocationService extends Service {
                     logger.info("Continue running in background");
                 }
                 super.onTaskRemoved(rootIntent);
+            } else {
+                mConfig = getConfig();
             }
         } catch (NullPointerException e) {
             logger.error("onTaskRemoved exception: {}", e.getMessage());
