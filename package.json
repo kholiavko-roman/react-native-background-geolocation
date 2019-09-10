@@ -1,11 +1,6 @@
 {
-<<<<<<< HEAD
-  "name": "react-native-mauron85-background-geolocation",
-  "version": "0.5.0-alpha.3.15",
-=======
   "name": "@mauron85/react-native-background-geolocation",
   "version": "0.6.1",
->>>>>>> 1e94c6717441e2b960a063a3e00d5220965306a7
   "description": "optimized background location tracking",
   "main": "./index.js",
   "types": "./index.d.ts",
