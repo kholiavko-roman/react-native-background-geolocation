@@ -1,20 +1,30 @@
 'use strict';
 
-var { DeviceEventEmitter, NativeModules } = require('react-native');
-const RNBackgroundGeolocation = NativeModules.BackgroundGeolocation;
+var { DeviceEventEmitter, NativeModules, AppRegistry } = require('react-native');
+var RNBackgroundGeolocation = NativeModules.BackgroundGeolocation;
+var TAG = 'RNBackgroundGeolocation';
+var TASK_KEY = 'com.marianhello.bgloc.react.headless.Task';
 
 function emptyFn() {}
+function defaultErrorHandler(error) {
+  var cause = error.cause || {};
+  var causeMessage = cause.message;
+  throw TAG + ': ' + error.message + (causeMessage ? ': ' + cause.message : '');
+}
 
 var BackgroundGeolocation = {
   events: [
     'location',
     'stationary',
+    'activity',
     'start',
     'stop',
     'error',
     'authorization',
     'foreground',
-    'background'
+    'background',
+    'abort_requested',
+    'http_authorization'
   ],
 
   DISTANCE_FILTER_PROVIDER: 0,
@@ -26,41 +36,26 @@ var BackgroundGeolocation = {
 
   NOT_AUTHORIZED: 0,
   AUTHORIZED: 1,
+  AUTHORIZED_FOREGROUND: 2,
 
   HIGH_ACCURACY: 0,
   MEDIUM_ACCURACY: 100,
   LOW_ACCURACY: 1000,
   PASSIVE_ACCURACY: 10000,
 
-  // @Deprecated
-  provider: {
-    ANDROID_DISTANCE_FILTER_PROVIDER: 0,
-    ANDROID_ACTIVITY_PROVIDER: 1
-  },
+  LOG_ERROR: 'ERROR',
+  LOG_WARN: 'WARN',
+  LOG_INFO: 'INFO',
+  LOG_DEBUG: 'DEBUG',
+  LOG_TRACE: 'TRACE',
 
-  // @Deprecated
-  mode: {
-    BACKGROUND: 0,
-    FOREGROUND: 1
-  },
-
-  // @Deprecated
-  accuracy: {
-    HIGH: 0,
-    MEDIUM: 100,
-    LOW: 1000,
-    PASSIVE: 10000
-  },
-
-  // @Deprecated
-  auth: {
-    DENIED: 0,
-    AUTHORIZED: 1
-  },
+  PERMISSION_DENIED: 1,
+  LOCATION_UNAVAILABLE: 2,
+  TIMEOUT: 3,
 
   configure: function(config, successFn, errorFn) {
     successFn = successFn || emptyFn;
-    errorFn = errorFn || emptyFn;
+    errorFn = errorFn || defaultErrorHandler;
     RNBackgroundGeolocation.configure(config, successFn, errorFn);
   },
 
@@ -70,14 +65,6 @@ var BackgroundGeolocation = {
 
   stop: function() {
     RNBackgroundGeolocation.stop();
-  },
-
-  // @deprecated
-  isLocationEnabled: function(successFn, errorFn) {
-    console.log('[WARN]: this method is deprecated. Use checkStatus instead.');
-    successFn = successFn || emptyFn;
-    errorFn = errorFn || emptyFn;
-    RNBackgroundGeolocation.isLocationEnabled(successFn, errorFn);
   },
 
   checkStatus: function(successFn, errorFn) {
@@ -92,6 +79,22 @@ var BackgroundGeolocation = {
 
   showLocationSettings: function() {
     RNBackgroundGeolocation.showLocationSettings();
+  },
+
+  /**
+   * Returns current stationaryLocation if available.  null if not
+   */
+  getStationaryLocation: function (successFn, errorFn) {
+    successFn = successFn || emptyFn;
+    errorFn = errorFn || emptyFn;
+    RNBackgroundGeolocation.getStationaryLocation(successFn, errorFn);
+  },
+
+  getCurrentLocation: function(successFn, errorFn, options) {
+    options = options || {};
+    successFn = successFn || emptyFn;
+    errorFn = errorFn || emptyFn;
+    RNBackgroundGeolocation.getCurrentLocation(options, successFn, errorFn);
   },
 
   getLocations: function(successFn, errorFn) {
@@ -130,10 +133,25 @@ var BackgroundGeolocation = {
     RNBackgroundGeolocation.getConfig(successFn, errorFn);
   },
 
-  getLogEntries: function(limit, successFn, errorFn) {
-    successFn = successFn || emptyFn;
-    errorFn = errorFn || emptyFn;
-    RNBackgroundGeolocation.getLogEntries(limit, successFn, errorFn);
+  getLogEntries: function(limit, /* offset = 0, minLevel = "DEBUG", successFn = emptyFn, errorFn = emptyFn */) {
+    var acnt = arguments.length;
+    var offset, minLevel, successFn, errorFn;
+
+    if (acnt > 1 && typeof arguments[1] == 'function') {
+      // backward compatibility
+      console.log('[WARN]: Calling deprecated variant of getLogEntries method.');
+      offset = 0;
+      minLevel = BackgroundGeolocation.LOG_DEBUG;
+      successFn = arguments[1] || emptyFn;
+      errorFn = arguments[2] || emptyFn;
+    } else {
+      offset = acnt > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+      minLevel = acnt > 2 && arguments[2] !== undefined ? arguments[2] : BackgroundGeolocation.LOG_DEBUG;
+      successFn = acnt > 3 && arguments[3] !== undefined ? arguments[3] : emptyFn;
+      errorFn = acnt > 4 && arguments[4] !== undefined ? arguments[4] : emptyFn;
+    }
+
+    RNBackgroundGeolocation.getLogEntries(limit, offset, minLevel, successFn, errorFn);
   },
 
   startTask: function(callbackFn) {
@@ -157,24 +175,44 @@ var BackgroundGeolocation = {
     }
   },
 
+  headlessTask: function(task, successFn, errorFn) {
+    successFn = successFn || emptyFn;
+    errorFn = errorFn || emptyFn;
+    AppRegistry.registerHeadlessTask(TASK_KEY, () => task);
+    RNBackgroundGeolocation.registerHeadlessTask(successFn, errorFn);
+  },
+
+  forceSync: function(successFn, errorFn) {
+    successFn = successFn || emptyFn;
+    errorFn = errorFn || emptyFn;
+    RNBackgroundGeolocation.forceSync(successFn, errorFn);
+  },
+
   on: function(event, callbackFn) {
     if (typeof callbackFn !== 'function') {
-      throw 'RNBackgroundGeolocation: callback function must be provided';
+      throw TAG + ': callback function must be provided';
     }
     if (this.events.indexOf(event) < 0) {
-      throw 'RNBackgroundGeolocation: Unknown event "' + event + '"';
+      throw TAG + ': Unknown event "' + event + '"';
     }
 
     return DeviceEventEmitter.addListener(event, callbackFn);
   },
 
   removeAllListeners: function(event) {
+    if (!event) {
+      this.events.forEach(function(event) {
+        DeviceEventEmitter.removeAllListeners(event);
+      });
+      return void 0;
+    }
     if (this.events.indexOf(event) < 0) {
-      console.log('[WARN] RNBackgroundGeolocation: removeAllListeners for unknown event "' + event + '"');
-      return false;
+      console.log('[WARN] ' + TAG + ': removeAllListeners for unknown event "' + event + '"');
+      return void 0;
     }
 
-    return DeviceEventEmitter.removeAllListeners(event);
+    DeviceEventEmitter.removeAllListeners(event);
+    return void 0;
   }
 };
 
